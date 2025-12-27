@@ -13,7 +13,7 @@ variable "environment" {
 
 variable "vpc_tags" {
     type = map 
-    default = {}  # optiona
+    default = {}  # optional
 }
 
 variable "igw_tags" {
