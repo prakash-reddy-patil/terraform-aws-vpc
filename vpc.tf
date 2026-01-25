@@ -4,29 +4,27 @@ resource "aws_vpc" "main" {
   instance_tenancy = "default"
   enable_dns_hostnames = true
 
-  # Tags must be created as per the project standard: project_name-environment-resource_name.
   tags = merge(
     var.vpc_tags,
     local.common_tags,
     {
-      Name = local.common_name_suffix
+        Name = local.common_name_suffix
     }
   )
 }
-
 
 # IGW
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
+
   tags = merge(
     var.igw_tags,
     local.common_tags,
     {
-      Name = local.common_name_suffix
+        Name = local.common_name_suffix
     }
   )
 }
-
 
 # Public Subnets
 resource "aws_subnet" "public" {
@@ -34,13 +32,13 @@ resource "aws_subnet" "public" {
   vpc_id     = aws_vpc.main.id
   cidr_block = var.public_subnet_cidrs[count.index]
   availability_zone = local.az_names[count.index]
-  map_public_ip_on_launch = true # Any EC2 instance launched in that subnet will automatically get a public IP address
+  map_public_ip_on_launch = true
 
   tags = merge(
     var.public_subnet_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}-public-${local.az_names[count.index]}" # roboshop-dev-public-us-east-1a
+        Name = "${local.common_name_suffix}-public-${local.az_names[count.index]}" # roboshop-dev-public-us-east-1a
     }
   )
 }
@@ -52,16 +50,15 @@ resource "aws_subnet" "private" {
   vpc_id     = aws_vpc.main.id
   cidr_block = var.private_subnet_cidrs[count.index]
   availability_zone = local.az_names[count.index]
- 
+
   tags = merge(
     var.private_subnet_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}-private-${local.az_names[count.index]}"  # roboshop-dev-private-us-east-1a
+        Name = "${local.common_name_suffix}-private-${local.az_names[count.index]}" # roboshop-dev-private-us-east-1a
     }
   )
 }
-
 
 # Database Subnets
 resource "aws_subnet" "database" {
@@ -69,12 +66,12 @@ resource "aws_subnet" "database" {
   vpc_id     = aws_vpc.main.id
   cidr_block = var.database_subnet_cidrs[count.index]
   availability_zone = local.az_names[count.index]
-  
+
   tags = merge(
     var.database_subnet_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}-database-${local.az_names[count.index]}" # roboshop-dev-database-us-east-1a
+        Name = "${local.common_name_suffix}-database-${local.az_names[count.index]}" # roboshop-dev-database-us-east-1a
     }
   )
 }
@@ -88,10 +85,11 @@ resource "aws_route_table" "public" {
     var.public_route_table_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}-public"
+        Name = "${local.common_name_suffix}-public"
     }
   )
 }
+
 
 # Private Route Table
 resource "aws_route_table" "private" {
@@ -101,7 +99,7 @@ resource "aws_route_table" "private" {
     var.private_route_table_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}-private"
+        Name = "${local.common_name_suffix}-private"
     }
   )
 }
@@ -115,7 +113,7 @@ resource "aws_route_table" "database" {
     var.database_route_table_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}-database"
+        Name = "${local.common_name_suffix}-database"
     }
   )
 }
@@ -127,22 +125,21 @@ resource "aws_route" "public" {
   gateway_id = aws_internet_gateway.main.id
 }
 
-
-# Elastic Ip
+# Elastic IP
 resource "aws_eip" "nat" {
   domain   = "vpc"
 
-tags = merge(
+  tags = merge(
     var.eip_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}-nat"
+        Name = "${local.common_name_suffix}-nat"
     }
   )
 }
 
 
-# NAT gatway
+# NAT gateway
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
@@ -151,7 +148,7 @@ resource "aws_nat_gateway" "nat" {
     var.nat_gateway_tags,
     local.common_tags,
     {
-      Name = "${local.common_name_suffix}"
+        Name = "${local.common_name_suffix}"
     }
   )
 
@@ -181,15 +178,13 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_route_table_association" "private" {
- count = length(var.private_subnet_cidrs)
+  count = length(var.private_subnet_cidrs)
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }
-
 
 resource "aws_route_table_association" "database" {
   count = length(var.database_subnet_cidrs)
   subnet_id      = aws_subnet.database[count.index].id
   route_table_id = aws_route_table.database.id
 }
-
